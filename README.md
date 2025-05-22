@@ -1,5 +1,64 @@
+# 🏎️ F1 AI Predictor: Predizione Avanzata dei Risultati di Gara in Formula 1
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Un progetto accademico che esplora l'uso del Machine Learning per predire i risultati dei Gran Premi di Formula 1, sfruttando dati telemetrici, cronometrici e contestuali. Il sistema implementa due modelli predittivi distinti e un'interfaccia utente interattiva.
+
+**Autori:** Alessandro Gautieri (2041850), Giovanni Cinieri (2054772)
+**Corso:** AI Lab
+**Anno Accademico:** 2024/2025
 
 ---
+
+## 📝 Panoramica del Progetto
+
+L'analisi predittiva nel motorsport, e in particolare nella Formula 1, rappresenta una sfida affascinante data la natura dinamica e multifattoriale delle competizioni. Questo progetto si propone di sviluppare un sistema innovativo per la predizione della posizione finale di ciascun pilota.
+
+Il progetto si articola in due approcci principali:
+
+1.  **Modello 1 (Predizione Durante la Gara):** Utilizza dati telemetrici, cronometrici e contestuali (come i rating Elo di piloti e team) relativi ai primi 30 giri di gara per predire la classifica finale. Si basa su un sofisticato **ensemble ponderato posizionalmente** di algoritmi di Gradient Boosting Decision Trees (GBDT): **LightGBM** e **CatBoost**.
+2.  **Modello 2 (Predizione Pre-Gara):** Fornisce una stima della classifica finale prima dell'inizio della competizione, utilizzando informazioni quali la griglia di partenza fornita dall'utente, i rating Elo più recenti e le performance storiche dei piloti e dei team su specifici circuiti. Anche questo modello si avvale di **CatBoost**.
+
+Entrambi i sistemi sono stati integrati in un'**interfaccia utente interattiva (GUI) realizzata con Gradio**, permettendo l'esplorazione delle predizioni per gare concluse (stagioni 2023, 2024 e gare 2025 disputate) e per gare future della stagione 2025.
+
+➡️ **Per una descrizione dettagliata del progetto, delle metodologie, dei risultati e delle analisi, consulta il nostro report completo: `REPORT_PROGETTO_F1_AI.pdf` (incluso in questo repository).**
+
+---
+
+## ✨ Funzionalità Chiave
+
+*   **Acquisizione Dati Avanzata:** Utilizzo della libreria `FastF1` per raccogliere dati dettagliati dalle sessioni di F1.
+*   **Feature Engineering Sofisticato:**
+    *   Creazione di feature telemetriche sintetiche.
+    *   Integrazione di metriche relative al leader e alla competizione (differenziali, percentili).
+    *   Implementazione di un sistema di **Rating Elo dinamico** per piloti e team.
+    *   Calcolo di statistiche storiche di performance su specifici circuiti per il Modello 2.
+*   **Modellazione Robusta:**
+    *   **Modello 1:** Ensemble ottimizzato di LightGBM (con hyperparameter tuning via Optuna) e CatBoost, con una strategia di ponderazione posizionale per le predizioni.
+    *   **Modello 2:** CatBoostRegressor addestrato su feature pre-gara.
+*   **Due Scenari di Predizione:**
+    *   Analisi di gare concluse con predizioni basate sui dati dei primi 30 giri.
+    *   Predizioni pre-gara per eventi futuri basate sulla griglia di partenza fornita dall'utente.
+*   **Interfaccia Utente Interattiva:** Una GUI sviluppata con `Gradio` per un' facile esplorazione e interazione con i modelli.
+*   **Pipeline Dati Flessibile:** Script separati per la costruzione del dataset storico (`build_dataset.py`), per l'aggiornamento con i dati della stagione corrente (`build_dataset_current_season.py`), e per la creazione del dataset pre-gara (`build_dataset_pre_race.py`).
+
+---
+
+## 🛠️ Struttura del Progetto e Tecnologie Utilizzate
+
+*   **Linguaggio:** Python
+*   **Acquisizione Dati:** `FastF1`
+*   **Manipolazione Dati:** `pandas`, `numpy`
+*   **Modellazione:**
+    *   `scikit-learn` (per pipeline, preprocessing, metriche)
+    *   `LightGBM`
+    *   `CatBoost`
+    *   `Optuna` (per hyperparameter tuning)
+    *   `joblib` (per serializzazione modelli)
+*   **Interfaccia Utente:** `Gradio`
+*   **Visualizzazione (per analisi e report):** `matplotlib`, `seaborn`, `Graphviz`
+
+
 
 ## 🚀 Come Eseguire
 
