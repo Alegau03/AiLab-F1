@@ -4,9 +4,9 @@
 
 Un progetto accademico che esplora l'uso del Machine Learning per predire i risultati dei Gran Premi di Formula 1, sfruttando dati telemetrici, cronometrici e contestuali. Il sistema implementa due modelli predittivi distinti e un'interfaccia utente interattiva.
 
-**Autori:** Alessandro Gautieri (2041850), Giovanni Cinieri (2054772)
-**Corso:** AI Lab
-**Anno Accademico:** 2024/2025
+**Autori:** Alessandro Gautieri (2041850), Giovanni Cinieri (2054772)    
+**Corso:** AI Lab - Informatica  
+**Anno Accademico:** 2024/2025   
 ---
 
 ## 📝 Panoramica del Progetto
