@@ -1,0 +1,36 @@
+# requirements.txt (con focus su GPU e CUDA 12.1 per PyTorch)
+
+# Core Data Science & Numerics
+pandas>=1.5.0,<2.3.0
+numpy>=1.23.0,<1.27.0
+scikit-learn>=1.3.0,<1.5.0
+
+# Machine Learning Models
+lightgbm>=4.0.0,<4.4.0 # Per GPU, installare con: pip install lightgbm --config-settings=cmake.define.USE_GPU=ON (o metodi specifici per OS/distro)
+catboost>=1.2.0,<1.3.0 # Supporta GPU out-of-the-box se CUDA è presente
+
+# Model Persistence
+joblib>=1.2.0,<1.5.0
+
+# Hyperparameter Optimization (usato solo nel training, opzionale per la sola GUI)
+optuna>=3.4.0,<3.7.0
+
+# GUI
+gradio>=4.0.0,<4.30.0
+matplotlib>=3.6.0,<3.9.0
+
+# PyTorch (con supporto CUDA 12.1)
+# Questo installerà PyTorch, torchvision, e torchaudio compatibili con CUDA 12.1.
+# Assicurati che i tuoi driver NVIDIA e il CUDA Toolkit (se installato manualmente) siano compatibili.
+# Il comando pip qui sotto è quello che useresti direttamente, ma pip con -r requirements.txt lo gestirà.
+# pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+torch>=2.0.0,<2.3.0+cu121 
+torchvision>=0.15.0,<0.18.0+cu121
+torchaudio>=2.0.0,<2.3.0+cu121
+# Nota: Le versioni esatte potrebbero cambiare. Verifica sempre su https://pytorch.org/get-started/locally/
+
+# Utilities
+tabulate>=0.9.0,<0.10.0
+
+# FastF1 (per build_dataset.py, non per la GUI con dati precompilati)
+# fastf1>=3.1.0,<3.4.0

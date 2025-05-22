@@ -1,0 +1,133 @@
+target:
+- final_position_scaled
+continuous_cols:
+- lap_time
+- lap_time_diff
+- lap_time_pct
+- gap_to_leader_diff
+- gap_to_leader_pct
+- speed_avg
+- throttle_pct
+- brake_pct
+- drs_pct
+- gear_avg
+- sector1
+- sector2
+- sector3
+- stint
+- lap_in_stint
+- elo_driver
+- elo_team
+- position
+- lap_number
+categorical_cols:
+- team
+- driver
+- compound
+- pit_in
+- pit_out
+- track_status
+date_columns: []
+encode_date_columns: true
+validation_split: 0.2
+continuous_feature_transform: null
+normalize_continuous_features: true
+quantile_noise: 0
+num_workers: 0
+pin_memory: true
+handle_unknown_categories: true
+handle_missing_values: true
+dataloader_kwargs: {}
+task: regression
+head: LinearHead
+head_config:
+  layers: ''
+embedding_dims:
+- - 13
+  - 7
+- - 25
+  - 13
+- - 7
+  - 4
+- - 3
+  - 2
+- - 3
+  - 2
+- - 17
+  - 9
+embedding_dropout: 0.0
+batch_norm_continuous_input: true
+learning_rate: 0.001
+loss: MSELoss
+metrics:
+- mean_squared_error
+metrics_prob_input:
+- false
+metrics_params:
+- {}
+target_range: null
+virtual_batch_size: null
+seed: 42
+_module_src: models.category_embedding
+_model_name: CategoryEmbeddingModel
+_backbone_name: CategoryEmbeddingBackbone
+_config_name: CategoryEmbeddingModelConfig
+layers: 128-64
+activation: ReLU
+use_batch_norm: false
+initialization: kaiming
+dropout: 0.0
+batch_size: 1024
+data_aware_init_batch_size: 2000
+fast_dev_run: false
+max_epochs: 60
+min_epochs: 1
+max_time: null
+accelerator: gpu
+devices: 1
+devices_list: null
+accumulate_grad_batches: 1
+auto_lr_find: false
+auto_select_gpus: false
+check_val_every_n_epoch: 1
+gradient_clip_val: 0.5
+overfit_batches: 0.0
+deterministic: false
+profiler: null
+early_stopping: valid_loss
+early_stopping_min_delta: 0.001
+early_stopping_mode: min
+early_stopping_patience: 7
+early_stopping_kwargs: {}
+checkpoints: valid_loss
+checkpoints_path: saved_models
+checkpoints_every_n_epochs: 1
+checkpoints_name: null
+checkpoints_mode: min
+checkpoints_save_top_k: 1
+checkpoints_kwargs: {}
+load_best: true
+track_grad_norm: -1
+progress_bar: rich
+precision: 32
+trainer_kwargs: {}
+optimizer: AdamW
+optimizer_params: {}
+lr_scheduler: ReduceLROnPlateau
+lr_scheduler_params:
+  patience: 3
+  factor: 0.5
+  mode: min
+lr_scheduler_monitor_metric: valid_loss
+categorical_dim: 6
+continuous_dim: 19
+output_dim: 1
+output_cardinality: null
+categorical_cardinality:
+- 13
+- 25
+- 7
+- 3
+- 3
+- 17
+embedded_cat_dim: 37

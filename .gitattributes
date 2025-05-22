@@ -1,0 +1,4 @@
+cache/fastf1_http_cache.sqlite filter=lfs diff=lfs merge=lfs -text
+code/cache/fastf1_http_cache.sqlite filter=lfs diff=lfs merge=lfs -text
+*.ff1pkl filter=lfs diff=lfs merge=lfs -text
+*.dylib filter=lfs diff=lfs merge=lfs -text
