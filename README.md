@@ -7,7 +7,6 @@ Un progetto accademico che esplora l'uso del Machine Learning per predire i risu
 **Autori:** Alessandro Gautieri (2041850), Giovanni Cinieri (2054772)
 **Corso:** AI Lab
 **Anno Accademico:** 2024/2025
-
 ---
 
 ## 📝 Panoramica del Progetto
@@ -21,7 +20,7 @@ Il progetto si articola in due approcci principali:
 
 Entrambi i sistemi sono stati integrati in un'**interfaccia utente interattiva (GUI) realizzata con Gradio**, permettendo l'esplorazione delle predizioni per gare concluse (stagioni 2023, 2024 e gare 2025 disputate) e per gare future della stagione 2025.
 
-➡️ **Per una descrizione dettagliata del progetto, delle metodologie, dei risultati e delle analisi, consulta il nostro report completo: `REPORT_PROGETTO_F1_AI.pdf` (incluso in questo repository).**
+➡️ **Per una descrizione dettagliata del progetto, delle metodologie, dei risultati e delle analisi, consulta il nostro report completo: `AiLab report.pdf` (incluso in questo repository).**
 
 ---
 
@@ -125,6 +124,10 @@ Le metriche di valutazione dettagliate per entrambi i modelli sono disponibili n
 *   Adattamento del sistema per l'utilizzo con flussi di dati in tempo reale (se disponibili).
 *   Esplorazione di tecniche di ensemble più sofisticate (es. stacking).
 
+---
+## Interfaccia
+![Interfaccia Gradio](diagrams/img1.png)
+![Interfaccia Gradio](diagrams/img2.png)
 ---
 
 ## 📄 Licenza
