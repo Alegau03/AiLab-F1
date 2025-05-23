@@ -1,5 +1,9 @@
-#!/usr/bin/env python
-# train_model.py (v6_catboost_fix_catembed_skip)
+    """
+    Script per addestrare e valutare modelli di regressione su un dataset di Formula 1.
+    Utilizza LightGBM e CatBoost per la previsione della posizione finale in gara.
+    Include funzionalità di pre-elaborazione, ottimizzazione dei parametri e valutazione delle prestazioni.
+    Prevede anche un ensamble dei modelli e la gestione dei pesi posizionali.
+    """
 # ------------------------------------------------------------------------------
 import json
 import warnings
@@ -21,7 +25,7 @@ from tabulate import tabulate
 
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, FunctionTransformer # Added FunctionTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, FunctionTransformer 
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GroupShuffleSplit, GroupKFold
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -149,7 +153,7 @@ for col in NUM_COLS:
 
 NUM_COLS = [c for c in NUM_COLS if c in df.columns]
 if not NUM_COLS:
-     print("    ⚠️ WARNING: No columns left in NUM_COLS list.")
+     print("⚠️ WARNING: No columns left in NUM_COLS list.")
 else:
     numeric_dtypes = df[NUM_COLS].dtypes
     non_numeric_mask = ~numeric_dtypes.apply(pd.api.types.is_numeric_dtype)
@@ -159,7 +163,7 @@ else:
         print(non_numeric_in_num)
         raise TypeError("Preprocessing cannot continue with non-numeric columns in NUM_COLS")
     else:
-        print("    ✅ All NUM_COLS are numeric.")
+        print(" ✅ All NUM_COLS are numeric.")
 
 print(f"  Coercing TARGET column '{TARGET}'...")
 if TARGET in df.columns:
@@ -346,6 +350,7 @@ if CATBOOST_AVAILABLE:
     catboost_pipeline = None # Initialize
 
     # *** Skip Training Logic for CatBoost Pipeline ***
+    # Serve per caricare un pipeline esistente o addestrare un nuovo modello, se trova un vecchio train skippa
     if catboost_pipeline_path.exists():
         try:
             print(f"⏳ Loading CatBoost pipeline from {catboost_pipeline_path}...")
@@ -429,11 +434,11 @@ if catboost_pipeline is not None: # Check the pipeline object
 else: print("⚠️ CatBoost not available."); predictions['catboost_pred'] = np.full(len(y_test_eval), np.nan)
 
 
-# --- NUOVA SEZIONE: GESTIONE DEI PESI POSIZIONALI ---
+# --- Calcolo/Caricamento Pesi Posizionali ---
 WEIGHTS_FILE = OUTPUT_DIR / "positional_weights.json"
 POSITIONS_OF_INTEREST = list(range(1, 21)) # Assumendo posizioni da 1 a 20
 
-# !!! CORREZIONE QUI !!!
+
 # Definiamo i nomi base dei modelli che useremo per i pesi
 MODEL_BASE_NAMES_FOR_WEIGHTS = ['lgbm', 'catboost']
 DEFAULT_WEIGHTS = {name: 1.0 / len(MODEL_BASE_NAMES_FOR_WEIGHTS) for name in MODEL_BASE_NAMES_FOR_WEIGHTS} # Pesi uguali se non specificato
@@ -460,7 +465,7 @@ def calculate_positional_weights(y_true_train, predictions_train_dict, positions
         raw_skills = {}
         total_skill_for_pos = 0
 
-        for model_key in model_pred_keys: # es. 'lgbm_pred', 'catboost_pred'
+        for model_key in model_pred_keys: 
             model_base_name = model_key.replace('_pred', '') # Ottiene 'lgbm' o 'catboost'
             model_pred_train = predictions_train_dict.get(model_key) # Usa .get() per sicurezza
 
@@ -507,7 +512,6 @@ def load_positional_weights():
             print(f"⚠️ Error loading positional weights: {e}. Will attempt to recalculate.")
     return None
 
-# --- FINE NUOVA SEZIONE ---
 
 # ─── 4. Evaluation & Ensemble ────────────────────────────────────────────────
 print("\n--- Evaluating Models and Ensemble ---")
@@ -595,7 +599,7 @@ if position_specific_weights is None:
         position_specific_weights = {}
 
 
-# Ensemble
+# Ensemble pesato
 print("\n📊 Calculating Weighted Ensemble...")
 valid_preds_for_ensemble = []
 model_simple_names_map = {'lgbm_pred': 'lgbm', 'catboost_pred': 'catboost'} # Mappa le chiavi di predizione ai nomi usati nei pesi
@@ -675,7 +679,6 @@ else:
 
 
 # --- Display Results ---
-# Modifica questa parte per includere 'ensemble_pred_weighted' se vuoi
 print("\n🎯 FINAL TEST METRICS")
 headers = ["Model", "MAE", "RMSE", "R²"]
 table_data = []
@@ -685,7 +688,6 @@ for name, mae, rmse, r2 in results:
 print(tabulate(table_data if table_data else [["No results", "N/A", "N/A", "N/A"]], headers=headers, tablefmt="github"))
 
 # --- Save Predictions ---
-# Modifica questa parte per salvare 'ensemble_pred_weighted'
 final_pred_len = len(y_test_eval)
 valid_prediction_data = {'y_true': predictions['y_true']}
 for key, value in predictions.items():

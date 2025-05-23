@@ -4,10 +4,9 @@ import seaborn as sns # Per uno stile migliore
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from pathlib import Path # <--- AGGIUNGI QUESTA RIGA
+from pathlib import Path 
 
-# --- CONFIGURAZIONE ---
-# ... (il resto della tua configurazione) ...
+
 # --- CONFIGURAZIONE ---
 PRE_RACE_DATASET_PATH = "data/Modello2/pre_race_prediction_dataset.csv" # Assicurati che il path sia corretto
 # Piloti/Team da visualizzare (scegline alcuni significativi)

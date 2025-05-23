@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 # train_model2.py (Per predizioni Pre-Gara)
-
+    """
+    Script per addestrare il modello 2 (CatBoost) per le predizioni pre-gara.
+    """
 import warnings
 import math
 import random
 from pathlib import Path
 import gc
-import json # Per salvare/caricare i pesi dell'ensemble (se li usassimo qui)
+import json # Per salvare/caricare i pesi dell'ensemble 
 
 import numpy as np
 import pandas as pd
-import torch # Anche se non usiamo modelli PyTorch, CatBoost/LGBM GPU potrebbero averne bisogno
+import torch 
 from joblib import dump, load
 from tabulate import tabulate
 
@@ -22,8 +24,8 @@ from sklearn.model_selection import GroupShuffleSplit # Per splittare per gara
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.utils.validation import check_is_fitted
 import typing 
-from typing import List, Optional, Any # Aggiungi Optional qui
-# Importa il modello scelto
+from typing import List, Optional, Any 
+
 try:
     from catboost import CatBoostRegressor
     CATBOOST_AVAILABLE = True
@@ -71,9 +73,6 @@ OUTPUT_DIR = Path("models"); OUTPUT_DIR.mkdir(exist_ok=True)
 PRE_RACE_MODEL_PIPELINE_PATH = OUTPUT_DIR / "pre_race_catboost_pipeline.joblib" # Nome specifico
 
 TARGET = "final_position"
-# Definiamo le feature per il Modello 2 basandoci su pre_race_prediction_dataset.csv
-# Anno, round, gp potrebbero essere usate per lo splitting o come feature se si fa OHE su 'gp'
-# Per ora, usiamo 'gp' come feature categorica diretta per CatBoost.
 
 YEARS_LOOKBACK = 2 # Deve corrispondere a quello usato in build_dataset_pre_race.py
 

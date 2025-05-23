@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+    """
+    Questo script verifica la correttezza del dataset generato da build_dataset.py.
+    """
+
 import sys
 import pandas as pd
 import numpy as np
@@ -8,12 +13,12 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 # Columns expected to be fully imputed by build_dataset.py
-# REMOVED 'hard_brakes'
+
 COLS_IMPUTED_IN_BUILD = [
     'lap_time', 'sector1', 'sector2', 'sector3',
     'speed_avg', 'throttle_pct', 'brake_pct', 'drs_pct', 'gear_avg'
 ]
-
+# Funzione per il caricamento e la validazione del dataset
 def validate(path):
     logging.info(f"🔍 Caricando dataset da: {path}")
     try:
@@ -255,3 +260,5 @@ if __name__ == "__main__":
         print("Uso: python validate_dataset.py <path_dataset.csv>")
         sys.exit(1)
     validate(sys.argv[1])
+    
+    

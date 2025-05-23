@@ -1,5 +1,12 @@
 # build_dataset.py (v3 - Fixes from validation)
-
+    """
+    Questo script costruisce un dataset di allenamento per un modello di previsione delle prestazioni in F1., sugli anni 2023 e 2024.
+    Utilizza i dati di telemetria e le informazioni sui piloti per calcolare le caratteristiche e le etichette.
+    Le caratteristiche includono tempi di giro, differenze di tempo, percentuali di telemetria e punteggi ELO.
+    Il dataset finale viene salvato in un file CSV.
+    Le colonne specifiche da calcolare e le strategie di imputazione sono configurabili.
+    Il codice è progettato per essere eseguito in un ambiente Python con FastF1 e altre librerie necessarie installate.
+    """
 import os
 from glob import glob
 from pathlib import Path
@@ -25,11 +32,10 @@ CALENDAR_PATH = os.path.join(DATA_DIR, "gare_per_anno.csv")
 OUTPUT_PATH = os.path.join(DATA_DIR, "training_dataset_COMPLETO.csv")
 MAX_LAP = 30
 
-# Columns for which to calculate _pct ranks based on input CSV data
+# Colonne da calcolare percentili (sorgente: CSV)
 PCT_COLS_FROM_CSV = ['lap_time', 'gap_to_leader']
 
-# Columns to impute at the end using median strategy (driver -> global)
-# Added position, lap_time_pct. Removed hard_brakes. lap_time_diff handled separately.
+# Colonne da calcolare percentili (sorgente: F1)
 COLS_TO_IMPUTE_MEDIAN = [
     'lap_time', 'sector1', 'sector2', 'sector3',
     'speed_avg', 'throttle_pct', 'brake_pct', 'drs_pct', 'gear_avg',
@@ -37,28 +43,25 @@ COLS_TO_IMPUTE_MEDIAN = [
 ]
 # --- End Configuration ---
 
+# Questa funzione calcola i secondi totali da un oggetto timedelta
 def safe_total_seconds(td):
     """Convert Timedelta to total seconds, returning NaN for NaT."""
     if pd.isna(td):
         return np.nan
     return td.total_seconds()
 
+# Funzione per calcolare le caratteristiche di telemetria sintetica
 def process_telemetry(car_data):
-    """
-    Calculates synthetic telemetry features from FastF1 car data.
-    Returns NaNs if car_data is empty or lacks expected columns.
-    REMOVED hard_brakes as it was always 0.
-    """
-    # Reduced required cols as hard_brakes is removed
+
     required_cols = {'Speed', 'Throttle', 'Brake', 'DRS', 'nGear'}
     if car_data is None or car_data.empty or not required_cols.issubset(car_data.columns):
         logging.debug("Telemetry data missing or incomplete for telemetry processing.") # Changed to debug level
-        # Return dict without hard_brakes
+
         return dict.fromkeys(['speed_avg','throttle_pct','brake_pct','drs_pct','gear_avg'], np.nan)
 
     total = len(car_data)
     if total == 0:
-         # Return dict without hard_brakes
+
          return dict.fromkeys(['speed_avg','throttle_pct','brake_pct','drs_pct','gear_avg'], np.nan)
 
     try:
@@ -68,7 +71,6 @@ def process_telemetry(car_data):
             'brake_pct': (car_data['Brake'] > 0).sum() / total if total else 0,
             'drs_pct': (car_data['DRS'] > 0).sum() / total if total else 0,
             'gear_avg': car_data['nGear'].mean(),
-            # 'hard_brakes' calculation removed
         }
     except Exception as e:
         logging.error(f"Error processing telemetry: {e}")
@@ -77,7 +79,9 @@ def process_telemetry(car_data):
 
     return results
 
-
+# Funzione principale per costruire il dataset
+# Questa funzione esegue il processo di costruzione del dataset
+# Carica i dati di telemetria, calcola le caratteristiche e salva il dataset finale
 def main():
     logging.info("Starting dataset build process (v3)...")
     try:
@@ -150,7 +154,7 @@ def main():
                     logging.error(f"Error loading FastF1 session for {gp_identifier}: {e}. Skipping GP.")
                     continue
 
-                # Verify driver mapping
+                # Controlla il mapping dei team
                 csv_drivers = set(df_input_csv.driver.unique())
                 missing_drivers = csv_drivers - set(team_map.keys())
                 if missing_drivers:
@@ -171,12 +175,12 @@ def main():
                 # --- Process Lap by Lap ---
                 for lap_no, grp_csv in df_input_csv.groupby('lap_number'):
 
-                    # Find leader based on input CSV position for this lap
+
                     leader_rows_csv = grp_csv[grp_csv.position == 1]
                     leader_driver = None
                     if not leader_rows_csv.empty:
                          leader_driver = leader_rows_csv.iloc[0]['driver']
-                    else: # Try F1 data if missing in CSV
+                    else: # Prova a trovare il leader in FastF1
                         f1_lap_data = laps_all_f1[laps_all_f1['LapNumber'] == lap_no]
                         leader_f1_rows = f1_lap_data[f1_lap_data['Position'] == 1]
                         if not leader_f1_rows.empty:

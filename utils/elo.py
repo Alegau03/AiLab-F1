@@ -8,14 +8,7 @@ import numpy as np
 
 # Configura logging per questo modulo se vuoi messaggi specifici da elo.py
 logger_elo = logging.getLogger(__name__)
-# Per abilitare il logging da questo modulo se eseguito da solo o per debug:
-# if not logger_elo.hasHandlers():
-#     logger_elo.setLevel(logging.INFO)
-#     handler = logging.StreamHandler()
-#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#     handler.setFormatter(formatter)
-#     logger_elo.addHandler(handler)
-#     logger_elo.propagate = False
+
 
 
 # --- Iper-parametri ELO ---
@@ -25,14 +18,19 @@ DECAY        = 0.02
 GAP_SCALER   = 400.0
 DNF_PENALTY  = 25
 
+# Funzione di utilità per calcolare il punteggio atteso
 def expected(r_a: float, r_b: float) -> float:
     return 1.0 / (1.0 + 10 ** ((r_b - r_a) / 400.0))
+
+# Funzione per calcolare il fattore K
+# Il fattore K determina quanto il punteggio ELO di un giocatore può cambiare dopo una partita
 
 def k_factor(rating: float, race_idx: int, total_races_in_season: int = 22) -> float:
     ratio = (race_idx / total_races_in_season) if total_races_in_season > 0 else 0
     base = K_BASE * (1.0 - 0.5 * ratio)
     return max(K_MIN, min(K_MAX, base))
 
+# Funzione per aggiornare il punteggio ELO
 def update_rating(r_a: float, r_b: float, score: float, gap: float, race_idx: int, total_races_in_season: int) -> float:
     exp = expected(r_a, r_b)
     k   = k_factor(r_a, race_idx, total_races_in_season)
@@ -41,6 +39,8 @@ def update_rating(r_a: float, r_b: float, score: float, gap: float, race_idx: in
         g_factor = 1.0 + (abs(gap) / GAP_SCALER)
     return r_a + k * g_factor * (score - exp)
 
+# Funzione per calcolare la storia ELO
+# Questa funzione calcola la storia ELO per i piloti e le squadre in base ai risultati delle gare
 def compute_elo_history(schedule_df: pd.DataFrame, initial_elo_driver=None, initial_elo_team=None):
     elo_driver = defaultdict(lambda: 1500.0)
     if initial_elo_driver:
@@ -78,7 +78,7 @@ def compute_elo_history(schedule_df: pd.DataFrame, initial_elo_driver=None, init
         
         try:
             sess = fastf1.get_session(year, gp, "R")
-            # *** CORREZIONE QUI: Rimosso argomento 'results' ***
+
             sess.load(laps=True, telemetry=False, weather=False, messages=False) # laps=True per aiutare a caricare i risultati
         except Exception as e:
             logger_elo.warning(f"FastF1: Could not load session for {year} {gp}: {e}. Skipping ELO update.")
@@ -163,7 +163,7 @@ def compute_elo_history(schedule_df: pd.DataFrame, initial_elo_driver=None, init
 
     return final_elo_drivers, final_elo_teams, pd.DataFrame(elo_history) if elo_history else pd.DataFrame()
 
-
+# Funzione per calcolare l'ELO dinamico
 def compute_dynamic_elo(schedule_df: pd.DataFrame):
     final_elo_drivers, final_elo_teams, _ = compute_elo_history(schedule_df)
     return final_elo_drivers, final_elo_teams

@@ -1,25 +1,8 @@
-#!/usr/bin/env python
-# app_gradio.py (v2.1-styled) – unified flow for disputed & undisputed GPs with landing page
-# ------------------------------------------------------------------------------
-"""
-Key changes vs v2.0-fixed:
---------------------------
-1. **Landing Page Tab ("Home")**: Added a new tab with a prominent title "Formula AI"
-   and an auto-playing video underneath.
-2. **F1-inspired Styling**:
-    - Kept and integrated the existing custom CSS for a dark theme with red accents.
-    - Applied `gr.themes.Soft` with the "Orbitron" Google Font for a modern,
-      motorsport feel.
-    - Added a CSS class `.formula-ai-title` for styling the landing page title.
-3. **Tabbed Interface**: The main application is now in a "Predictor" tab,
-   separate from the "Home" tab.
-4. **Video Path**: Assumes `video/video_landing.mp4` relative to the script.
 
-Assumptions
------------
-* A folder named `video` exists in the same directory as this script.
-* The video file `video_landing.mp4` is placed inside the `video` folder.
-* All other path constants and logic from v2.0-fixed remain the same.
+"""
+Questo è il codice principale per l'interfaccia Gradio di Formula AI.
+L'interfaccia consente di visualizzare i dati di gara e fare previsioni sui risultati delle gare di Formula 1.
+è presente una home e una pagina per la predizione.
 """
 
 from __future__ import annotations
@@ -40,7 +23,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 # ── helper --------------------------------------------------------------------
 try:
-    from utils_gradio import to_str_type  # noqa: F401 – used by CatBoost
+    from utils_gradio import to_str_type  # Nostra funzione per i dati
     print("✅  util to_str_type imported from utils_gradio.py")
 except ImportError:
     print("⚠️  utils_gradio.py not found – defining local to_str_type fallback.")
@@ -62,16 +45,16 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 MODELS_DIR = BASE_DIR / "models"
-VIDEO_DIR = BASE_DIR / "video" # Path for video
+VIDEO_DIR = BASE_DIR / "video" # Roba vecchia
 
-YEAR_CURR = 2025  # season we may have undisputed GPs for
+YEAR_CURR = 2025  # Stagione corrente ( non finita)
 GP_YEARS = [2023, 2024, YEAR_CURR]
 
 # datasets & models -----------------------------------------------------------
 HISTORICAL_M1_PATH = DATA_DIR / "training_dataset_COMPLETO.csv"  # 2023‑24
-M1_2025_PATH = DATA_DIR / f"training_dataset_{YEAR_CURR}.csv"  # disputed races up to now
-CALENDAR_PATH = DATA_DIR / f"gare_{YEAR_CURR}.csv"  # full season calendar
-PRE_RACE_DATASET_M2 = DATA_DIR / "pre_race_prediction_dataset.csv"  # features only – historical
+M1_2025_PATH = DATA_DIR / f"training_dataset_{YEAR_CURR}.csv"  # gare 2025 disputate fino ad ora
+CALENDAR_PATH = DATA_DIR / f"gare_{YEAR_CURR}.csv"  # Tutto il calendario 2025
+PRE_RACE_DATASET_M2 = DATA_DIR / "pre_race_prediction_dataset.csv"  # dataset pre-gara
 
 MODEL1_LGBM_PATH = MODELS_DIR / "lgbm_pipeline.joblib"
 MODEL1_CB_PATH = MODELS_DIR / "catboost_pipeline.joblib"
@@ -145,7 +128,7 @@ PRED_M2_DISPLAY = {
     "predicted_position": "Pos. Predetta (Mod.2)",
 }
 
-# dataclass for internal passing ---------------------------------------------
+# dataclass ---------------------------------------------
 @dataclass
 class LapDataM1:
     X: Optional[pd.DataFrame] = None
@@ -167,6 +150,7 @@ ELO_CACHE: Dict[str, Dict[str, float]] = {}
 
 # ── resource loading ---------------------------------------------------------
 
+# Questa funzione viene chiamata all'avvio dell'app per caricare i modelli e i dataset
 def load_resources() -> None:
     """Load models + datasets – run once at startup."""
     global model1_lgbm, model1_cb, model2_cb
@@ -191,7 +175,7 @@ def load_resources() -> None:
         df_parts.append(pd.read_csv(M1_2025_PATH))
     if df_parts:
         ALL_M1_DF = pd.concat(df_parts, ignore_index=True)
-        # typing & cleanup
+        # pulizia i dati
         for col in ["gp", "driver", "team"] + CAT_COLS_M1:
             if col in ALL_M1_DF.columns:
                 ALL_M1_DF[col] = ALL_M1_DF[col].astype(str)
@@ -205,7 +189,7 @@ def load_resources() -> None:
         
     if PRE_RACE_DATASET_M2.exists():
         PRE_RACE_DF = pd.read_csv(PRE_RACE_DATASET_M2)
-        # minimal typing for cache elo
+        # serve per l'elo pre-gara
         PRE_RACE_DF[["driver", "team"]] = PRE_RACE_DF[["driver", "team"]].astype(str)
         PRE_RACE_DF["elo_driver_pre_race"] = pd.to_numeric(
             PRE_RACE_DF["elo_driver_pre_race"], errors="coerce"
@@ -213,7 +197,6 @@ def load_resources() -> None:
         PRE_RACE_DF["elo_team_pre_race"] = pd.to_numeric(
             PRE_RACE_DF["elo_team_pre_race"], errors="coerce"
         )
-        # snapshot of latest elo values for convenience
         if not PRE_RACE_DF.empty:
             latest = PRE_RACE_DF.sort_values(["anno", "round"]).drop_duplicates(
                 ["driver"], keep="last"
@@ -238,6 +221,7 @@ load_resources()
 
 # ── helper functions ---------------------------------------------------------
 
+# Questa funzione restituisce una lista di Gran Premi per un anno specifico.
 def gp_list_for_year(year: int) -> List[str]:
     if year == YEAR_CURR and not CALENDAR_DF.empty:
         df = CALENDAR_DF.copy()
@@ -254,7 +238,7 @@ def gp_list_for_year(year: int) -> List[str]:
     return []
 
 
-
+# Questa funzione restituisce i dati di gara per un Gran Premio specifico, anno e giro.
 def fetch_lap_data(year: int, gp: str, lap: int) -> LapDataM1:
     if ALL_M1_DF.empty:
         return LapDataM1(error="Dataset Modello‑1 non caricato.")
@@ -275,6 +259,7 @@ def fetch_lap_data(year: int, gp: str, lap: int) -> LapDataM1:
 
 # ── UI logic helpers ---------------------------------------------------------
 
+#Questa funzione restituisce gli aggiornamenti per i componenti dell'interfaccia utente
 def ui_state_for_gp(year: int, gp: str) -> Tuple[
     gr.Slider.update,
     gr.Button.update,
@@ -286,7 +271,6 @@ def ui_state_for_gp(year: int, gp: str) -> Tuple[
     gr.Dataframe.update,
 ]:
     """Centralised logic -> exactly **8** component updates."""
-    # default: hide all specialised controls
     hide = gr.update(visible=False)
     slider_upd: gr.Slider.update = gr.Slider.update(value=1, minimum=1, maximum=30, visible=False)
     m1_show_upd = gr.Button.update(visible=False)
@@ -312,7 +296,7 @@ def ui_state_for_gp(year: int, gp: str) -> Tuple[
     disputed = (year, gp) in DISPUTED_RACES
 
     if disputed:
-        # Model‑1 flow
+        # Modello 1 oer gare passate
         subset = ALL_M1_DF[(ALL_M1_DF["anno"] == year) & (ALL_M1_DF["gp"] == gp)]
         max_lap = 30 # Default
         if not subset.empty and "lap_number" in subset.columns:
@@ -327,7 +311,7 @@ def ui_state_for_gp(year: int, gp: str) -> Tuple[
         m1_pred_upd = gr.Button.update(value="🔮 Predici Risultati (Mod.1)", visible=True)
         sit_table_upd = gr.Dataframe.update(visible=True)
     else:
-        # future GP – Model‑2 pre‑race
+        # Gp futuro -> Modello 2
         md_upd = gr.Markdown.update(
             value=f"""
 ### 🚦 Predizione Pre-Gara per {gp} {year} (Modello 2)
@@ -348,12 +332,13 @@ per ottenere una predizione pre-gara basata sul Modello 2.
         file_upd,
         m2_pred_upd,
         sit_table_upd,
-        pred_table_reset, # Reset predictions table when GP changes
+        pred_table_reset, # Resetta la tabella delle predizioni quando cambia il GP
     )
 
 
 # ── model‑1 UI handlers -------------------------------------------------------
 
+# Questa funzione viene chiamata quando l'utente seleziona un anno e un GP, serve per vedere la situazione ad un dato giro
 def show_situation(year: int, gp: str, lap: int):
     if not year or not gp:
         return gr.Dataframe.update(value=pd.DataFrame({"Info": ["Seleziona Anno e Gran Premio."]}))
@@ -373,22 +358,22 @@ def show_situation(year: int, gp: str, lap: int):
         lambda x: "DNF" if x in (0, 99) else int(x)
     )
 
-    # remaining mapped cols
+    # Restanti colonne
     for src, dst in SITUATION_DISPLAY.items():
         if dst in df_disp.columns:
-            continue  # already handled
+            continue  
         if src == "gap_leader_display":
             df_disp[dst] = df_raw["gap_to_leader_diff"].apply(
                 lambda v: "Leader" if v == 0 else (f"{v:+.3f}s" if pd.notna(v) else "N/D")
             )
         elif src in df_raw.columns:
-            if src in ("pit_in", "pit_out"): # These are usually boolean/int in source
+            if src in ("pit_in", "pit_out"): # booleani
                 df_disp[dst] = (
                     df_raw[src]
-                    .astype(str) # Ensure string for mapping
+                    .astype(str) # Assicura che sia stringa
                     .str.lower()
                     .map({"true": "Sì", "1": "Sì", "1.0": "Sì", "false": "No", "0": "No", "0.0": "No"})
-                    .fillna("N/D") # Handle other cases
+                    .fillna("N/D") # Gestisce i valori NaN
                 )
             elif src == "lap_time":
                  df_disp[dst] = df_raw[src].apply(lambda x: f"{x:.3f}s" if pd.notna(x) else "N/D")
@@ -401,7 +386,7 @@ def show_situation(year: int, gp: str, lap: int):
     ordered_cols = [c for c in SITUATION_DISPLAY.values() if c in df_disp.columns]
     return gr.Dataframe.update(value=df_disp[ordered_cols])
 
-
+# Funzione per predire i risultati di gara (Modello 1)
 def predict_m1(year: int, gp: str, lap: int):
     if not year or not gp:
         return gr.Dataframe.update(value=pd.DataFrame({"Info": ["Seleziona Anno e Gran Premio."]}))
@@ -411,13 +396,13 @@ def predict_m1(year: int, gp: str, lap: int):
     if data.error or data.X is None or data.y_true is None or data.display_raw is None:
         error_msg = data.error if data.error else "Dati incompleti per la predizione M1."
         return gr.Dataframe.update(value=pd.DataFrame({"Errore": [error_msg]}))
-
-    X = data.X
+    
+    X = data.X 
     base = data.display_raw[["driver", "team"]].reset_index(drop=True)
     y_true_series = data.y_true.reset_index(drop=True)
     y_true = y_true_series.fillna(0).astype(int)
 
-
+    # Assicura che le colonne siano nell'ordine corretto
     preds: list[np.ndarray] = []
     if model1_lgbm is not None:
         try:
@@ -437,31 +422,32 @@ def predict_m1(year: int, gp: str, lap: int):
         return gr.Dataframe.update(value=pd.DataFrame({"Errore": ["Nessun modello M1 disponibile o errore predizione."]}))
 
     raw = np.mean(preds, axis=0)
-    order = np.argsort(raw) # Sorts by predicted values (lower is better position)
+    order = np.argsort(raw) # Ordina per la posizione prevista
     ranks = np.empty_like(order)
-    ranks[order] = np.arange(1, len(raw) + 1) # Assign ranks 1, 2, 3...
+    ranks[order] = np.arange(1, len(raw) + 1) 
 
     out_df = base.copy()
     out_df["predicted_position"] = ranks
-    out_df["actual_position"] = y_true.apply(lambda x: "N/D" if x == 0 else x) # Show N/D if actual is 0
+    out_df["actual_position"] = y_true.apply(lambda x: "N/D" if x == 0 else x) # Fa vedere DNF come N/D, se la posizione è 0
     
-    # Calculate difference only if actual_position is numeric
+    # Calcola la differenza tra posizione prevista e reale
     def calculate_diff(row):
         if pd.notna(row["actual_position"]) and isinstance(row["actual_position"], (int, float)) and row["actual_position"] !=0:
             return row["predicted_position"] - row["actual_position"]
-        return "N/A" # Or np.nan, or empty string
+        return "N/A" 
 
     out_df["difference"] = out_df.apply(calculate_diff, axis=1)
     out_df = out_df.sort_values("predicted_position").rename(columns=PRED_M1_DISPLAY)
     
-    # Ensure correct column order
+    # Assicura che le colonne siano nell'ordine corretto
     final_cols = [PRED_M1_DISPLAY.get(col_key, col_key) for col_key in ["driver", "team", "predicted_position", "actual_position", "difference"]]
     return gr.Dataframe.update(value=out_df[final_cols])
 
 
 # ── model‑2 handler -----------------------------------------------------------
-
+#Questa funzione è chiamata quando l'utente preme il pulsante "Predici Griglia (Mod.2)", serve per predire il risultato finale partendo dalla griglia di partenza
 def predict_m2(year: int, gp: str, txt_file: Optional[Any]):
+    # Controlli vari
     if not year or not gp:
         return gr.Dataframe.update(value=pd.DataFrame({"Info": ["Seleziona Anno e Gran Premio."]}))
     if model2_cb is None:
@@ -480,76 +466,76 @@ def predict_m2(year: int, gp: str, txt_file: Optional[Any]):
     except Exception as e:
         return gr.Dataframe.update(value=pd.DataFrame({"Errore": [f"Errore lettura file griglia: {e}"]}))
 
-    # map driver -> team using most recent data available
-    # Ensure PRE_RACE_DF has 'driver' and 'team'
+    # mappa il driver -> la squadra utilizzando i dati più recenti disponibili
+    # Si assicura che PRE_RACE_DF ha 'driver' e 'team'
     if not ({'driver', 'team', 'anno', 'round'}.issubset(PRE_RACE_DF.columns)):
         return gr.Dataframe.update(value=pd.DataFrame({"Errore": ["Colonne necessarie mancanti in PRE_RACE_DF."]}))
 
     recent = (
         PRE_RACE_DF[PRE_RACE_DF["driver"].isin(drivers)]
-        .sort_values(["anno", "round"], ascending=[False, False]) # Get most recent
-        .drop_duplicates(["driver"], keep="first") # Keep first after sorting by most recent
+        .sort_values(["anno", "round"], ascending=[False, False]) # Prende i più recenti
+        .drop_duplicates(["driver"], keep="first") 
     )
-    d2t = recent.set_index("driver")["team"].to_dict()
+    d2t = recent.set_index("driver")["team"].to_dict() # Serve per mappare i nomi dei piloti ai team
 
     # build feature rows ------------------------------------------------------
     rows: list[Dict[str, Any]] = []
     for idx, drv_name_upper in enumerate(drivers, start=1):
-        team_name = d2t.get(drv_name_upper, "UnknownTeam") # Default if team not found for driver
+        team_name = d2t.get(drv_name_upper, "UnknownTeam") # Default se non trovato
         
-        # Initialize with defaults for all M2 features
+        # Inizializza i dati della riga
         row_data: Dict[str, Any] = {
             "starting_grid_position": idx,
             "driver": drv_name_upper,
             "team": team_name,
             "gp": gp, # GP name from dropdown
-            "is_driver_new_to_circuit": 1, # Assume new, will be updated if data exists
+            "is_driver_new_to_circuit": 1,
         }
         
-        # ELO scores (from cache or default)
+        # ELO scores
         row_data["elo_driver_pre_race"] = ELO_CACHE.get("driver", {}).get(drv_name_upper, 1500.0)
         row_data["elo_team_pre_race"] = ELO_CACHE.get("team", {}).get(team_name, 1500.0)
 
-        # Historical stats for the driver at this GP
-        # Filter PRE_RACE_DF for the current driver and GP
-        # Note: The features in PRE_RACE_DF are for *past* races at this circuit.
-        # We need to select the *latest available* historical data for this driver *at this circuit*.
+        # Statistiche storiche per il pilota in questo GP
+        # Filtra PRE_RACE_DF per il pilota e il GP correnti.
+        # Nota: le caratteristiche di PRE_RACE_DF si riferiscono alle gare *passate* su questo circuito.
+        # Dobbiamo selezionare gli *ultimi dati storici disponibili* per questo pilota *in questo circuito*.
         driver_gp_history = PRE_RACE_DF[
             (PRE_RACE_DF['driver'] == drv_name_upper) & (PRE_RACE_DF['gp'] == gp)
         ].sort_values('anno', ascending=False)
 
         if not driver_gp_history.empty:
-            latest_history = driver_gp_history.iloc[0] # Most recent year they raced at this GP
-            row_data["is_driver_new_to_circuit"] = 0 # Driver has history at this circuit
+            latest_history = driver_gp_history.iloc[0] # Anno più recente che i piloti hanno corso su questo circuito
+            row_data["is_driver_new_to_circuit"] = 0 # Il driver ha già corso su questo circuito
 
-            # Fill historical numerical features
+            # Riempie le statistiche storiche
             for col in NUM_COLS_M2:
                 if col in latest_history and pd.notna(latest_history[col]):
                     row_data[col] = latest_history[col]
-                elif col not in row_data: # If not set by grid pos or ELO
-                    row_data[col] = 0 # Default for missing numerical historical stats (e.g. avg_finish_pos)
+                elif col not in row_data: # Se non è stato impostato da grid pos o ELO
+                    row_data[col] = 0 # Default per statistiche storiche non disponibili
         else:
-            # Driver is new to this circuit (or no data), use defaults for historical stats
+            # Il pilota non ha mai corso su questo circuito
             row_data["is_driver_new_to_circuit"] = 1
             for col in NUM_COLS_M2:
-                if col not in row_data: # If not set by grid pos or ELO
-                    # For specific historical stats, 0 might be appropriate, or a neutral/average value
-                    # For example, avg_finish_pos_circuit could be a high number like 20 if new
-                    if "pos" in col: row_data[col] = 20 # Worse than last place default
+                if col not in row_data: # Se non è stato impostato da grid pos o ELO
+                    # Per statistiche storiche specifiche, 0 potrebbe essere appropriato, o un valore neutro/medio.
+                    # Per esempio, avg_finish_pos_circuit potrebbe essere un numero alto, come 20, se è nuovo.
+                    if "pos" in col: row_data[col] = 20 # Per esempio, 20 come posizione finale media
                     elif "pct" in col: row_data[col] = 0.5 # 50%
                     else: row_data[col] = 0
         
         rows.append(row_data)
 
     X_pred = pd.DataFrame(rows)
-    # Ensure all expected M2 features exist, filling any remaining NaNs
+    # Ci assicura che le colonne siano nell'ordine corretto
     for col in FEATURES_M2:
         if col not in X_pred.columns:
             if col in NUM_COLS_M2:
-                X_pred[col] = 0 # Or np.nan, but model might not handle NaNs
+                X_pred[col] = 0 # Default per colonne numeriche
             else: # Categorical
                 X_pred[col] = "Unknown"
-        elif col in NUM_COLS_M2: # If column exists but has NaNs
+        elif col in NUM_COLS_M2: # Assicura che le colonne numeriche siano float
              X_pred[col] = X_pred[col].fillna(0)
 
 
@@ -557,14 +543,14 @@ def predict_m2(year: int, gp: str, txt_file: Optional[Any]):
         ranks_raw = model2_cb.predict(X_pred[FEATURES_M2])
     except Exception as e:
         print(f"Errore predizione CatBoost M2: {e}")
-        # You could try to provide more info about X_pred.info() or X_pred.head() here
+        
         missing_model_cols = [f for f in FEATURES_M2 if f not in X_pred.columns]
         if missing_model_cols:
             return gr.Dataframe.update(value=pd.DataFrame({"Errore": [f"Mancano colonne per M2: {missing_model_cols}. Errore: {e}"]}))
         return gr.Dataframe.update(value=pd.DataFrame({"Errore": [f"CatBoost M2: {e}. Controlla i tipi di dati e i valori."]}))
 
 
-    order = np.argsort(ranks_raw) # Lower predicted value means better rank
+    order = np.argsort(ranks_raw) # Ordina le posizioni previste
     ranks = np.empty_like(order)
     ranks[order] = np.arange(1, len(ranks_raw) + 1)
 
@@ -766,6 +752,12 @@ body, .gradio-container {
     color: var(--color-text-primary) !important; /* Assicura che il testo del paragrafo sia leggibile */
     line-height: 1.5;
 }
+.qr-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 """
 
 
@@ -775,11 +767,11 @@ theme = gr.themes.Soft(
     neutral_hue=gr.themes.colors.gray,
     font=[gr.themes.GoogleFont("Orbitron"), "ui-sans-serif", "system-ui", "sans-serif"],
 ).set(
-    # Further theme customizations if needed, e.g.:
-    # body_background_fill="*background_fill_primary",
-    # block_title_text_color="*accent_color",
-    # button_primary_background_fill="*accent_color",
-    # button_primary_text_color="white",
+
+     body_background_fill="*background_fill_primary",
+     block_title_text_color="*accent_color",
+     button_primary_background_fill="*accent_color",
+     button_primary_text_color="white",
 )
 
 
@@ -820,15 +812,22 @@ Utilizzare l’Intelligenza Artificiale per fare predizioni sulle gare di **Form
 #### 🔗 Repository GitHub  
 Scansiona il QR code qui sotto per esplorare il nostro codice, documentazione e le ultime novità!
 """
-)
+)   
+            #QR code
+            gr.HTML(
+        """
+        <div style="text-align:center; margin-top:30px;">
+          <img 
+            src="/file=QRCodeAiLab.png" 
+            alt="QR Code" 
+            style="width:200px; height:200px; display:inline-block;"
+          />
+        </div>
+        """
+    )
+            
 
-            # QR code della repository
-            gr.Image(
-                "QRCodeAiLab.png",
-                interactive=False,
-                show_label=False
-            ).style(height=200, width=200)
-
+        # Tab per il Predictor
         with gr.TabItem("🚀 Predictor", id="predictor_tab"):
             gr.Markdown("# 🏎️ Formula AI Predictor", elem_classes=["app-main-title"])
             gr.Markdown("### Analisi e Predizioni per Gran Premi Disputati e Futuri")
@@ -840,24 +839,25 @@ Scansiona il QR code qui sotto per esplorare il nostro codice, documentazione e 
 
             with gr.Group(visible=False) as group_m1: # Group for M1 controls
                 gr.Markdown("#### Modello 1: Analisi Gara in Corso / Disputata")
-                slider_lap = gr.Slider(1, 75, label="Giro", step=1, interactive=True, elem_id="slider_lap_id") # Increased max lap
+                slider_lap = gr.Slider(1, 75, label="Giro", step=1, interactive=True, elem_id="slider_lap_id") # Aumenta max lap
                 with gr.Row():
                     btn_situation = gr.Button("📊 Mostra Situazione Giro", elem_id="btn_situation_id")
                     btn_pred_m1 = gr.Button("🔮 Predici Risultati (Mod.1)", elem_id="btn_pred_m1_id")
             
-            with gr.Group(visible=False) as group_m2: # Group for M2 controls
-                md_grid = gr.Markdown(elem_id="md_grid_id") # Content set dynamically
+            with gr.Group(visible=False) as group_m2: # Gruppo per M2
+                md_grid = gr.Markdown(elem_id="md_grid_id") # Contenuto caricato dinamicamente
                 with gr.Column(): # Una colonna per contenere entrambi verticalmente
                     file_grid = gr.File(file_types=[".txt"], label="Carica griglia di partenza (.txt)", elem_id="file_grid_id")
                     btn_pred_m2 = gr.Button("🔮 Predici Griglia (Mod.2)", elem_id="btn_pred_m2_id", scale=0) # scale=0 per dimensione automatica
 
-            gr.Markdown("---") # Separator
+            gr.Markdown("---") # Separatore Markdown
             
             tbl_situation = gr.Dataframe(label="Situazione Giro Corrente/Selezionato", interactive=False, visible=False, wrap=True, height=400)
             tbl_preds = gr.Dataframe(label="Risultati Predizioni", interactive=False, wrap=True, height=400)
 
 
             # -------- logic wires ---------------------------------------------------
+            #Questa funzione viene chiamata quando l'anno cambia, per aggiornare la lista dei GP e lo stato dell'interfaccia utente.
             def _update_gp_and_ui_visibility(year: int):
                 gps = gp_list_for_year(year)
                 selected_gp = gps[0] if gps else None
@@ -885,7 +885,7 @@ Scansiona il QR code qui sotto per esplorare il nostro codice, documentazione e 
                     sit_tbl_upd,
                     pred_tbl_upd,
                 )
-            
+            # Questa funzione viene chiamata quando l'anno cambia, per aggiornare la lista dei GP e lo stato dell'interfaccia utente.
             def _update_ui_for_gp_change(year: int, gp_name: str):
                 (slider_upd, m1_show_btn_upd, m1_pred_btn_upd, 
                  md_grid_upd, file_grid_upd, m2_pred_btn_upd, 
@@ -896,8 +896,8 @@ Scansiona il QR code qui sotto per esplorare il nostro codice, documentazione e 
                 m2_group_visible = gr.update(visible=not is_disputed_gp and gp_name is not None)
                 
                 return (
-                    m1_group_visible, # group_m1 visibility
-                    m2_group_visible, # group_m2 visibility
+                    m1_group_visible, # group_m1 
+                    m2_group_visible, # group_m2 
                     slider_upd,
                     m1_show_btn_upd,
                     m1_pred_btn_upd,
@@ -908,7 +908,7 @@ Scansiona il QR code qui sotto per esplorare il nostro codice, documentazione e 
                     pred_tbl_upd,
                 )
 
-            # React when year changes
+            # Reagisce quando l'anno cambia
             dd_year.change(
                 _update_gp_and_ui_visibility,
                 inputs=[dd_year],
@@ -920,7 +920,7 @@ Scansiona il QR code qui sotto per esplorare il nostro codice, documentazione e 
                 ]
             )
 
-            # React when GP changes (after year might have changed it)
+            # Reagisce quando il GP cambia
             dd_gp.change(
                 _update_ui_for_gp_change,
                 inputs=[dd_year, dd_gp],
@@ -937,16 +937,17 @@ Scansiona il QR code qui sotto per esplorare il nostro codice, documentazione e 
             btn_pred_m1.click(predict_m1, [dd_year, dd_gp, slider_lap], tbl_preds)
             btn_pred_m2.click(predict_m2, [dd_year, dd_gp, file_grid], tbl_preds)
 
-            # initial load state for predictor tab
-            # This will run when the Gradio app itself loads.
-            # We want to initialize the GP dropdown and the UI visibility based on the default year.
+            # carica per la scheda predittore
+
+            # Vogliamo inizializzare la tendina GP e la visibilità dell'interfaccia utente in base all'anno predefinito.
+            #La funzione _init_predictor_tab viene chiamata quando il demo viene caricato.
             def _init_predictor_tab(initial_year: int):
-                # This is similar to dd_year.change but for the initial load
+                
                 return _update_gp_and_ui_visibility(initial_year)
 
             demo.load(
                 _init_predictor_tab,
-                inputs=dd_year, # Use the initial value of dd_year
+                inputs=dd_year, 
                 outputs=[
                     dd_gp, group_m1, group_m2,
                     slider_lap, btn_situation, btn_pred_m1,

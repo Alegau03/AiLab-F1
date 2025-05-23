@@ -7,3 +7,6 @@ def to_str_type(X_df: pd.DataFrame) -> pd.DataFrame:
         # Potremmo provare a convertirlo, ma è meglio assicurarsi che riceva un DataFrame
         raise TypeError(f"to_str_type si aspetta un DataFrame, ha ricevuto {type(X_df)}")
     return X_df.astype(str)
+
+
+# Questa funzione è utile per convertire i dati in un formato compatibile con Gradio

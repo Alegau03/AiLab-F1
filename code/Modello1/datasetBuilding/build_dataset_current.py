@@ -1,5 +1,13 @@
 # build_dataset_current_season.py
-
+    """
+    
+    Questo script costruisce un dataset per l'anno corrente di Formula 1, estraendo dati da file CSV e calcolando le statistiche necessarie.
+    Utilizza FastF1 per caricare i dati delle sessioni e calcola le valutazioni ELO per i piloti e le squadre.
+    Il dataset risultante viene salvato in un file CSV specificato.
+    Le colonne del dataset includono informazioni sui giri, i piloti, le squadre, i tempi sul giro e altre metriche di prestazione.
+    Inoltre, gestisce i valori NaN e applica imputazioni appropriate per garantire la completezza dei dati.
+    Il codice è progettato per essere eseguito come script principale e include la gestione degli errori e il logging per monitorare il progresso e le problematiche durante l'esecuzione.
+    """
 import os
 from glob import glob
 from pathlib import Path

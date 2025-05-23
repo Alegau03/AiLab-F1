@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# build_dataset_pre_race.py (MODIFICATO - Corretto KeyError e gestione colonne nel merge)
 
 import os
 from pathlib import Path
@@ -25,6 +23,7 @@ OUTPUT_PRE_RACE_DATASET_PATH = DATA_DIR / "pre_race_prediction_dataset.csv"
 YEARS_LOOKBACK_CIRCUIT_STATS = 2
 # --- End Configuration ---
 
+# Questa funzione calcola le statistiche per un pilota su un circuito specifico
 def get_circuit_stats_for_driver(driver_abbr: str, current_gp_name: str, current_year: int,
                                  all_results_df: pd.DataFrame, lookback_years: int):
     stats = {
@@ -87,7 +86,8 @@ def get_circuit_stats_for_team(team_name: str, current_gp_name: str, current_yea
             stats[f"team_avg_pos_gained_circuit_prev{lookback_years}y"] = (valid_finish_team['GridPosition_numeric'] - valid_finish_team['Position_numeric']).mean()
         else: stats[f"team_avg_pos_gained_circuit_prev{lookback_years}y"] = 0.0
     return stats
-
+# FUnzione principale per costruire il dataset pre-gara, carica i risultati delle sessioni di qualifica e gara, calcola le statistiche e salva il dataset finale
+# Questa funzione costruisce il dataset pre-gara per il modello di previsione
 def main():
     logging.info("Starting Pre-Race Prediction Dataset build process...")
     try: cal_full = pd.read_csv(CALENDAR_PATH); logging.info("Full calendar loaded.")
@@ -128,7 +128,6 @@ def main():
     else:
         df_all_sessions = pd.concat(all_session_results_list, ignore_index=True)
         
-        # *** INIZIO SEZIONE MODIFICATA PER CORREGGERE KEYERROR ***
         logging.info("Processing and merging Q and R session data...")
         # Estrai dati Qualifica, usa 'Abbreviation'
         q_data_cols = ['Abbreviation', 'anno', 'gp', 'Position']

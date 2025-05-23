@@ -1,3 +1,11 @@
+    """
+    Questo script estrae i dati delle gare di Formula 1 per l'anno 2025
+    e salva i risultati in file CSV. Utilizza la libreria FastF1 per accedere ai dati
+    delle gare e calcolare statistiche come la velocità media, la percentuale di accelerazione,
+    la percentuale di frenata, la percentuale di DRS, la marcia media e il numero di frenate brusche.
+    I dati vengono salvati in una cartella specificata e il processo di estrazione è
+    monitorato tramite una barra di avanzamento.
+    """
 import os
 import fastf1
 import pandas as pd
@@ -9,7 +17,6 @@ os.makedirs('./cache', exist_ok=True)
 fastf1.Cache.enable_cache('./cache')
 
 # Cartelle dati
-#os.makedirs('../data/Gare2023', exist_ok=True)
 os.makedirs('../data/Gare2025', exist_ok=True)
 
 # Anni da estrarre

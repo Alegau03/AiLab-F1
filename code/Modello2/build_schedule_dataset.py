@@ -1,7 +1,7 @@
 import fastf1
 import pandas as pd
 
-# Attiva la cache se vuoi
+# Attiva la cache a piacimento
 fastf1.Cache.enable_cache('./cache')  # opzionale, utile per velocizzare
 
 anni = [2025]
