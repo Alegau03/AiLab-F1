@@ -51,10 +51,10 @@ YEAR_CURR = 2025  # Stagione corrente ( non finita)
 GP_YEARS = [2023, 2024, YEAR_CURR]
 
 # datasets & models -----------------------------------------------------------
-HISTORICAL_M1_PATH = DATA_DIR / "training_dataset_COMPLETO.csv"  # 2023‑24
-M1_2025_PATH = DATA_DIR / f"training_dataset_{YEAR_CURR}.csv"  # gare 2025 disputate fino ad ora
-CALENDAR_PATH = DATA_DIR / f"gare_{YEAR_CURR}.csv"  # Tutto il calendario 2025
-PRE_RACE_DATASET_M2 = DATA_DIR / "pre_race_prediction_dataset.csv"  # dataset pre-gara
+HISTORICAL_M1_PATH = DATA_DIR / "Modello1" / "training_dataset_COMPLETO.csv"  # 2023‑24
+M1_2025_PATH = DATA_DIR / "Modello1" / f"training_dataset_{YEAR_CURR}.csv"  # gare 2025 disputate fino ad ora
+CALENDAR_PATH = DATA_DIR / "Modello1" / f"gare_{YEAR_CURR}.csv"  # Tutto il calendario 2025
+PRE_RACE_DATASET_M2 = DATA_DIR / "Modello2" / "pre_race_prediction_dataset.csv"  # dataset pre-gara
 
 MODEL1_LGBM_PATH = MODELS_DIR / "lgbm_pipeline.joblib"
 MODEL1_CB_PATH = MODELS_DIR / "catboost_pipeline.joblib"
